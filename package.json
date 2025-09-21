@@ -1,13 +1,19 @@
 {
-  "name": "aiworkflows",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "name": "ai-workflows",
+  "private": true,
+  "packageManager": "pnpm@9",
+  "workspaces": [
+    "packages/*",
+    "examples/*",
+    "templates/*"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "packageManager": "pnpm@10.11.0"
+    "build": "turbo build",
+    "dev": "turbo dev",
+    "lint": "biome check .",
+    "format": "biome format . --write",
+    "release": "changeset version && pnpm -r build && changeset publish",
+    "test": "turbo test",
+    "clean": "turbo clean && rimraf node_modules"
+  }
 }
