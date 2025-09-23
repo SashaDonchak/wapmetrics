@@ -1,0 +1,36 @@
+name: Core Web Vitals
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
+jobs:
+  cwv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # OPTIONAL: get preview URL from your host (example uses an env)
+      # - id: preview
+      #   run: echo "preview_url=https://pr-${{ github.event.number }}-app.vercel.app" >> "$GITHUB_OUTPUT"
+
+      - name: Run CWV
+        uses: your-org/action-cwv@v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          lhrc-path: .lighthouserc.json
+          # Pick ONE mode below:
+          preview-url: ${{ steps.preview.outputs.preview_url }}
+          # static-dist-dir: ./out
+          # start-command: "npm ci && npm run build && npm run start"
+          # ready-pattern: "ready|listening|started"
+
+      - name: Upload LHCI artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lhci-reports
+          path: lhci-reports/
