@@ -1,13 +1,16 @@
 {
-    "name": "@aiwf/core",
-    "version": "0.0.0",
-    "type": "module",
-    "main": "dist/index.js",
-    "types": "dist/index.d.ts",
-    "files": ["dist"],
-    "scripts": {
-      "build": "tsc -p tsconfig.json",
-      "dev": "tsc -w",
-      "lint": "biome check ."
-    }
+  "name": "@aiwf/core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.1.0"
   }
+}

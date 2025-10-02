@@ -1,11 +1,6 @@
 {
-    "name": "@aiwf/action-cwv",
-    "version": "0.1.0",
-    "private": true,
-    "type": "module",
-    "main": "src/index.mjs",
-    "dependencies": {
-      "@octokit/rest": "^20.1.0"
-    }
-  }
-  
+  "name": "@aiwf/action-cwv",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module"
+}

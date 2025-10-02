@@ -32,11 +32,7 @@ runs:
       with:
         node-version: 20
 
-    - name: Install Action deps
-      shell: bash
-      run: npm --prefix "${{ github.action_path }}" ci --silent
-
-    - name: Run LHCI & comment
+    - name: Run CWV agent (CLI)
       shell: bash
       env:
         INPUT_GITHUB_TOKEN: ${{ inputs.github-token }}
@@ -47,4 +43,4 @@ runs:
         INPUT_READY_PATTERN: ${{ inputs.ready-pattern }}
         INPUT_ROUTES: ${{ inputs.routes }}
       run: |
-        node "${{ github.action_path }}/src/index.mjs"
+        node "${{ github.workspace }}/packages/cli-cwv/src/index.mjs"

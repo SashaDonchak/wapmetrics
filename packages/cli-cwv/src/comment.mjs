@@ -14,12 +14,14 @@ const reportsDir = process.env.CWV_REPORTS_DIR || "lhci-reports";
 const rcPath = process.env.CWV_RC_PATH || ".lighthouserc.json";
 
 // Load budgets from rc assertions so we don’t hardcode
-const rc = fs.existsSync(rcPath) ? JSON.parse(fs.readFileSync(rcPath, "utf8")) : {};
+const rc = fs.existsSync(rcPath)
+  ? JSON.parse(fs.readFileSync(rcPath, "utf8"))
+  : {};
 const a = rc?.ci?.assert?.assertions || {};
 const budgets = {
   lcp: a["largest-contentful-paint"]?.[1]?.maxNumericValue ?? 2500,
   cls: a["cumulative-layout-shift"]?.[1]?.maxNumericValue ?? 0.1,
-  inp: a["interaction-to-next-paint"]?.[1]?.maxNumericValue ?? 200
+  inp: a["interaction-to-next-paint"]?.[1]?.maxNumericValue ?? 200,
 };
 
 // Collect JSON reports
@@ -31,22 +33,26 @@ if (!files.length) {
   process.exit(0);
 }
 
-let best = { lcp: Infinity, cls: Infinity, inp: Infinity };
+const best = { lcp: Infinity, cls: Infinity, inp: Infinity };
 for (const f of files) {
   const rpt = JSON.parse(fs.readFileSync(path.join(reportsDir, f), "utf8"));
   const audits = rpt.audits || {};
   const m = {
     lcp: audits["largest-contentful-paint"]?.numericValue,
     cls: audits["cumulative-layout-shift"]?.numericValue,
-    inp: audits["interaction-to-next-paint"]?.numericValue
+    inp: audits["interaction-to-next-paint"]?.numericValue,
   };
   if (m.lcp && m.lcp < best.lcp) best.lcp = m.lcp;
   if (m.cls && m.cls < best.cls) best.cls = m.cls;
   if (m.inp && m.inp < best.inp) best.inp = m.inp;
 }
 const pass = (v, b) => v !== Infinity && v <= b;
-const ok = pass(best.lcp, budgets.lcp) && pass(best.cls, budgets.cls) && pass(best.inp, budgets.inp);
-const fmtMs = (ms) => (ms == null || ms === Infinity ? "—" : (ms / 1000).toFixed(2) + "s");
+const ok =
+  pass(best.lcp, budgets.lcp) &&
+  pass(best.cls, budgets.cls) &&
+  pass(best.inp, budgets.inp);
+const fmtMs = (ms) =>
+  ms == null || ms === Infinity ? "—" : `${(ms / 1000).toFixed(2)}s`;
 
 const artifactsNote = `Artifacts saved in \`${path.relative(process.cwd(), reportsDir) || reportsDir}\``;
 
@@ -56,9 +62,9 @@ const bodyMd = `
 
 | Metric | Best Value | Budget | Status |
 |---|---:|---:|:--:|
-| LCP | ${fmtMs(best.lcp)} | ${(budgets.lcp/1000).toFixed(2)}s | ${pass(best.lcp, budgets.lcp) ? "✅" : "❌"} |
+| LCP | ${fmtMs(best.lcp)} | ${(budgets.lcp / 1000).toFixed(2)}s | ${pass(best.lcp, budgets.lcp) ? "✅" : "❌"} |
 | CLS | ${best.cls === Infinity ? "—" : best.cls.toFixed(3)} | ${budgets.cls.toFixed(3)} | ${pass(best.cls, budgets.cls) ? "✅" : "❌"} |
-| INP | ${fmtMs(best.inp)} | ${(budgets.inp/1000).toFixed(2)}s | ${pass(best.inp, budgets.inp) ? "✅" : "❌"} |
+| INP | ${fmtMs(best.inp)} | ${(budgets.inp / 1000).toFixed(2)}s | ${pass(best.inp, budgets.inp) ? "✅" : "❌"} |
 
 <sub>Config: <code>.lighthouserc.json</code> • ${artifactsNote}</sub>
 `.trim();
@@ -83,13 +89,23 @@ const comments = await octokit.issues.listComments({
   owner,
   repo,
   issue_number: pr,
-  per_page: 100
+  per_page: 100,
 });
-const prev = comments.data.find((c) => c.body && c.body.includes(marker));
+const prev = comments.data.find((c) => c.body?.includes(marker));
 if (prev) {
-  await octokit.issues.updateComment({ owner, repo, comment_id: prev.id, body: commentBody });
+  await octokit.issues.updateComment({
+    owner,
+    repo,
+    comment_id: prev.id,
+    body: commentBody,
+  });
 } else {
-  await octokit.issues.createComment({ owner, repo, issue_number: pr, body: commentBody });
+  await octokit.issues.createComment({
+    owner,
+    repo,
+    issue_number: pr,
+    body: commentBody,
+  });
 }
 
 // Create a neat check run
@@ -101,7 +117,7 @@ await octokit.checks.create({
   head_sha: sha,
   status: "completed",
   conclusion: ok ? "success" : "failure",
-  output: { title: "Core Web Vitals", summary: bodyMd }
+  output: { title: "Core Web Vitals", summary: bodyMd },
 });
 
 console.log(`Posted CWV summary — ${ok ? "pass" : "fail"}`);
