@@ -1,0 +1,27 @@
+name: AIWF (LHCI only)
+on:
+  pull_request: { types: [opened, synchronize, reopened] }
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+jobs:
+  aiwf:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start tiny server
+        run: |
+          printf "<html><head><title>Demo</title></head><body>hi</body></html>" > index.html
+          python3 -m http.server 3000 &> /dev/null &
+          npx -y wait-on http://127.0.0.1:3000
+
+      - name: Collect LHCI & package
+        uses: ./../../packages/collector-action
+        with:
+          base-url: http://127.0.0.1:3000
+          
+          routes: "/"
+          lhrc-path: .lighthouserc.json
+
+

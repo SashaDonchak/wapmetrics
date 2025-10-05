@@ -16,7 +16,8 @@
       "!**/.next",
       "!**/.cache",
       "!**/coverage",
-      "!**/out"
+      "!**/out",
+      "!**/__deprecated__"
     ]
   },
   "formatter": {
