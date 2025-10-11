@@ -23905,9 +23905,10 @@ async function runLhci(opts) {
   };
   const tmpRc = import_node_path.default.join(opts.outDir, "lighthouserc.generated.json");
   import_node_fs.default.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
-  await sh("npx", ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc], {
-    cwd: process.cwd()
-  });
+  const lhciExit = await sh("npx", ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc], { cwd: process.cwd() });
+  if (lhciExit !== 0) {
+    throw new Error(`LHCI failed with exit code ${lhciExit}`);
+  }
   const reports = import_node_path.default.join(opts.outDir, "lhci");
   const files = import_node_fs.default.existsSync(reports) ? import_node_fs.default.readdirSync(reports).filter((f) => f.endsWith(".json")) : [];
   const summaries = [];

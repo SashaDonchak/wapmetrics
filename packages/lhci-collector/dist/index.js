@@ -23,10 +23,11 @@ export async function runLhci(opts) {
     };
     const tmpRc = path.join(opts.outDir, "lighthouserc.generated.json");
     fs.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
-    // Run LHCI; do not throw on non-zero exit
-    await sh("npx", ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc], {
-        cwd: process.cwd(),
-    });
+    // Run LHCI and fail on non-zero exit
+    const lhciExit = await sh("npx", ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc], { cwd: process.cwd() });
+    if (lhciExit !== 0) {
+        throw new Error(`LHCI failed with exit code ${lhciExit}`);
+    }
     // Build summary
     const reports = path.join(opts.outDir, "lhci");
     const files = fs.existsSync(reports)
