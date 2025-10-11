@@ -17,7 +17,7 @@ jobs:
           npx -y wait-on http://127.0.0.1:3000
 
       - name: Collect LHCI & package
-        uses: ./../packages/collector-action
+        uses: ./packages/collector-action
         with:
           base-url: http://127.0.0.1:3000
           
