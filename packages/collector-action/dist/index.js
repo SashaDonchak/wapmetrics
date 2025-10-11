@@ -23878,10 +23878,10 @@ var require_github = __commonJS({
 });
 
 // src/index.ts
-var import_promises2 = __toESM(require("node:fs/promises"), 1);
-var import_node_path11 = __toESM(require("node:path"), 1);
-var core = __toESM(require_core(), 1);
-var import_github = __toESM(require_github(), 1);
+var import_promises2 = __toESM(require("node:fs/promises"));
+var import_node_path11 = __toESM(require("node:path"));
+var core = __toESM(require_core());
+var import_github = __toESM(require_github());
 
 // ../lhci-collector/dist/index.js
 var import_node_child_process = require("node:child_process");
