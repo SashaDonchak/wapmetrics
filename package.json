@@ -6,7 +6,7 @@
     "examples/*",
     "templates/*"
   ],
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@10",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
