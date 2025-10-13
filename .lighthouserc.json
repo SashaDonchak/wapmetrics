@@ -1,0 +1,9 @@
+{
+  "ci": {
+    "collect": {
+      "url": ["$BASE_URL/"],
+      "numberOfRuns": 1
+    },
+    "upload": { "target": "filesystem", "outputDir": "./lhci-reports" }
+  }
+}

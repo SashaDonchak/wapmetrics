@@ -26,7 +26,7 @@ export type BundleLayout = {
 };
 
 export const ManifestSchema = {
-  $id: "https://schemas.aiwf.dev/manifest.schema.json",
+  $id: "https://schemas.wapmetrics.dev/manifest.schema.json",
   type: "object",
   additionalProperties: false,
   required: ["version", "routes", "collectors", "createdAt"],
@@ -65,7 +65,7 @@ export const ManifestSchema = {
 } as const;
 
 export const LhciSummarySchema = {
-  $id: "https://schemas.aiwf.dev/lhci-summary.schema.json",
+  $id: "https://schemas.wapmetrics.dev/lhci-summary.schema.json",
   type: "object",
   additionalProperties: false,
   required: ["summaries"],

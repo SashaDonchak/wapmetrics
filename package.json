@@ -1,12 +1,12 @@
 {
-  "name": "ai-workflows",
+  "name": "wapmetrics",
   "private": true,
   "workspaces": [
     "packages/*",
     "examples/*",
     "templates/*"
   ],
-  "packageManager": "pnpm@9.1.0",
+  "packageManager": "pnpm@10.11.0",
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
