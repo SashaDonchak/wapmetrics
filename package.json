@@ -1,5 +1,5 @@
 {
-  "name": "ai-workflows",
+  "name": "wapmetrics",
   "private": true,
   "workspaces": [
     "packages/*",

@@ -1,4 +1,4 @@
-name: AIWF (LHCI only)
+name: Lighthouse CI (LHCI)
 on:
   pull_request: { types: [opened, synchronize, reopened] }
 permissions:
@@ -6,7 +6,7 @@ permissions:
   pull-requests: write
   checks: write
 jobs:
-  aiwf:
+  lighthouse-ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
