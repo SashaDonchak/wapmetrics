@@ -1,0 +1,45 @@
+name: Publish Action
+
+on:
+  push:
+    tags:
+      - action-v*
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build all packages
+        run: pnpm -r build
+
+      - name: Commit dist and update tags
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -f packages/collector-action/dist
+          git commit -m "chore(action): update dist for $GITHUB_REF_NAME" || echo "No dist changes"
+
+          CONSUMER_TAG="${GITHUB_REF_NAME#action-}"
+          MAJOR_TAG="$(echo "$CONSUMER_TAG" | cut -d. -f1)"
+
+          # Move or create consumer tag (e.g., v1.2.3) and major tag (e.g., v1)
+          git tag -f "$CONSUMER_TAG"
+          git tag -f "$MAJOR_TAG"
+
+          git push origin "$CONSUMER_TAG" --force
+          git push origin "$MAJOR_TAG" --force
+
