@@ -1,6 +1,7 @@
 node_modules
 dist
 !packages/collector-action/dist/
+!dist/index.js
 build
 lib
 out
