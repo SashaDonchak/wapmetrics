@@ -26,11 +26,20 @@ jobs:
       - name: Build all packages
         run: pnpm -r build
 
-      - name: Commit dist and update tags
+      - name: Copy action files to root and commit
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f packages/collector-action/dist
+          
+          # Copy action.yml to root
+          cp packages/collector-action/action.yml action.yml
+          
+          # Copy dist to root
+          mkdir -p dist
+          cp packages/collector-action/dist/index.js dist/index.js
+          
+          # Stage both root action.yml and dist
+          git add -f action.yml dist/index.js
           git commit -m "chore(action): update dist for $GITHUB_REF_NAME" || echo "No dist changes"
 
           CONSUMER_TAG="${GITHUB_REF_NAME#action-}"
