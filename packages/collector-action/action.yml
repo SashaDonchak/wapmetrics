@@ -24,6 +24,13 @@ inputs:
     description: "Output tgz path"
     required: false
     default: ".wapmetrics/wapmetrics-run.tgz"
+  token:
+    description: "WAPMetrics API Token (optional - enables upload)"
+    required: false
+  api-url:
+    description: "WAPMetrics API URL"
+    required: false
+    default: "https://api.wapmetrics.dev/v1/ingest"
 outputs:
   artifact-path:
     description: "Path to produced tgz"

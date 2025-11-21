@@ -55,6 +55,8 @@ export async function runLhci(opts: RunOptions) {
     throw new Error(`LHCI failed with exit code ${lhciExit}`);
   }
 
+  fs.unlinkSync(tmpRc);
+
   // Build summary
   const reports = path.join(opts.outDir, "lhci");
   const files = fs.existsSync(reports)
@@ -69,11 +71,12 @@ export async function runLhci(opts: RunOptions) {
       lcp: audits["largest-contentful-paint"]?.numericValue,
       cls: audits["cumulative-layout-shift"]?.numericValue,
       inp: audits["interaction-to-next-paint"]?.numericValue,
+      tbt: audits["total-blocking-time"]?.numericValue,
     });
   }
   fs.writeFileSync(
     path.join(opts.outDir, "lhci-summary.json"),
-    JSON.stringify({ summaries, budgets: opts.budgets ?? {} }, null, 2),
+    JSON.stringify({ summaries }, null, 2),
   );
 }
 

@@ -16,6 +16,7 @@ export type LhciSummaryItem = {
   lcp?: number;
   cls?: number;
   inp?: number;
+  tbt?: number;
 };
 
 export type BundleLayout = {
@@ -81,17 +82,17 @@ export const LhciSummarySchema = {
           lcp: { type: "number" },
           cls: { type: "number" },
           inp: { type: "number" },
+          tbt: { type: "number" },
         },
-      },
-    },
-    budgets: {
-      type: "object",
-      additionalProperties: false,
-      properties: {
-        lcp: { type: "number" },
-        cls: { type: "number" },
-        inp: { type: "number" },
       },
     },
   },
 } as const;
+
+export type IngestRequest = {
+  owner: string;
+  repo: string;
+  pr?: number | string;
+  sha: string;
+};
+
