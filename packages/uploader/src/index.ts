@@ -35,7 +35,7 @@ export async function uploadArtifact(opts: UploadOptions) {
     formData.append("pr", String(metadata.pr));
   }
 
-  const response = await fetch(apiUrl, {
+  const response = await fetch(`${apiUrl}/ingest`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
