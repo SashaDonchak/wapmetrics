@@ -80,7 +80,7 @@ export async function runLhci(opts: RunOptions) {
   // Build summary
   const reports = path.join(opts.outDir, "lhci");
   const files = fs.existsSync(reports)
-    ? fs.readdirSync(reports).filter((f) => f.endsWith(".json") && f.startsWith("lhci-report-"))
+    ? fs.readdirSync(reports).filter((f) => f.endsWith(".json") && f !== "manifest.json")
     : [];
   const summaries: LhciSummaryItem[] = [];
   for (const f of files) {
