@@ -114,10 +114,13 @@ export function makeManifest(params: {
     repo: params.repo,
     pr: params.pr,
     sha: params.sha,
-    routes: params.routes,
-    env: { preset: "mobile" },
-    collectors: { lhci: true },
-    budgets: params.budgets,
+    plugins: {
+      lhci: {
+        routes: params.routes,
+        env: { preset: "mobile" },
+        budgets: params.budgets,
+      },
+    },
     createdAt: new Date().toISOString(),
   };
 }
