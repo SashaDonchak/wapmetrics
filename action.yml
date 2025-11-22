@@ -1,0 +1,38 @@
+name: "WAPMetrics Collector (LHCI)"
+description: "Runs LHCI collector and packages artifacts into wapmetrics-run.tgz"
+branding:
+  color: "blue"
+  icon: "activity"
+author: "you"
+runs: { using: "node20", main: "dist/index.js" }
+inputs:
+  base-url:
+    description: "Base URL to scan (http://127.0.0.1:3000\n or preview URL)"
+    required: true
+  routes:
+    description: "Comma-separated routes e.g. /,/pricing"
+    required: true
+  lhrc-path:
+    description: "Path to .lighthouserc.json"
+    required: false
+    default: ".lighthouserc.json"
+  budgets:
+    description: "JSON: {\"lcp\":2500,\"cls\":0.1,\"inp\":200}"
+    required: false
+    default: ""
+  out:
+    description: "Output tgz path"
+    required: false
+    default: ".wapmetrics/wapmetrics-run.tgz"
+  token:
+    description: "WAPMetrics API Token (optional - enables upload)"
+    required: false
+  api-url:
+    description: "WAPMetrics API URL"
+    required: false
+    default: "https://api.wapmetrics.dev/v1/ingest"
+outputs:
+  artifact-path:
+    description: "Path to produced tgz"
+
+
