@@ -7,7 +7,7 @@ export type Manifest = {
   routes: string[];
   env?: { preset?: string; chromium?: string };
   collectors: { lhci: boolean };
-  budgets?: { lcp?: number; cls?: number; inp?: number };
+  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
   createdAt: string;
 };
 
@@ -59,6 +59,7 @@ export const ManifestSchema = {
         lcp: { type: "number" },
         cls: { type: "number" },
         inp: { type: "number" },
+        tbt: { type: "number" },
       },
     },
     createdAt: { type: "string" },

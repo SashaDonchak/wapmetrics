@@ -16,7 +16,7 @@ export type RunOptions = {
   routes?: string[]; // fallback if rc has no urls
   lhrcPath: string; // path to .lighthouserc.json
   outDir: string; // where to write reports
-  budgets?: { lcp?: number; cls?: number; inp?: number };
+  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
 };
 
 export async function runLhci(opts: RunOptions) {
@@ -41,6 +41,26 @@ export async function runLhci(opts: RunOptions) {
     target: "filesystem",
     outputDir: path.join(opts.outDir, "lhci"),
   };
+
+  // Extract budgets from RC if not provided in opts
+  if (!opts.budgets || Object.keys(opts.budgets).length === 0) {
+    const rcBudgets = rc.ci?.assert?.budgets;
+    if (Array.isArray(rcBudgets)) {
+      // Try to find a global budget or the first one
+      const globalBudget =
+        rcBudgets.find((b: any) => b.path === "/" || b.path === "*") ||
+        rcBudgets[0];
+      if (globalBudget?.timings) {
+        opts.budgets = opts.budgets || {};
+        for (const t of globalBudget.timings) {
+          if (t.metric === "largest-contentful-paint") opts.budgets.lcp = t.budget;
+          if (t.metric === "cumulative-layout-shift") opts.budgets.cls = t.budget;
+          if (t.metric === "interaction-to-next-paint") opts.budgets.inp = t.budget;
+          if (t.metric === "total-blocking-time") opts.budgets.tbt = t.budget;
+        }
+      }
+    }
+  }
 
   const tmpRc = path.join(opts.outDir, "lighthouserc.generated.json");
   fs.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
@@ -82,7 +102,7 @@ export async function runLhci(opts: RunOptions) {
 
 export function makeManifest(params: {
   routes: string[];
-  budgets?: { lcp?: number; cls?: number; inp?: number };
+  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
   owner?: string;
   repo?: string;
   pr?: number;
