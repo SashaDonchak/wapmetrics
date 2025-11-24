@@ -10,6 +10,7 @@ on:
 jobs:
   integration-test:
     runs-on: ubuntu-latest
+    environment: CI
     steps:
       - uses: actions/checkout@v4
       
@@ -68,8 +69,8 @@ jobs:
           base-url: "http://127.0.0.1:3000"
           routes: "/"
           lhrc-path: ".lighthouserc.json"
-          # token: ${{ secrets.WAPMETRICS_TOKEN }}
-          # api-url: ${{ vars.WAPMETRICS_API_URL }} 
+          token: ${{ secrets.WAPMETRICS_TOKEN }}
+          api-url: ${{ vars.WAPMETRICS_API_URL }} 
           out: ".wapmetrics/wapmetrics-run.tgz"
 
       - name: Verify Artifact Exists
