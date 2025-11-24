@@ -13,13 +13,13 @@
     "lint": "biome check .",
     "lint:fix": "biome check . --write",
     "format": "biome format . --write",
-    "release": "changeset version && pnpm -r build && changeset publish",
     "test": "turbo test",
     "clean": "turbo clean && rimraf node_modules"
   },
   "devDependencies": {
     "@biomejs/biome": "^2.2.5",
     "@types/node": "^20",
+    "turbo": "^2.6.1",
     "typescript": "^5.9.3"
   }
 }
