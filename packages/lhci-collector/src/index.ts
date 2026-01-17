@@ -26,7 +26,11 @@ export async function runLhci(opts: RunOptions) {
   const rc = JSON.parse(fs.readFileSync(rcPath, "utf8"));
 
   const base = opts.baseUrl.replace(/\/$/, "");
-  const urls: string[] = (rc?.ci?.collect?.url ?? opts.routes ?? []).map(
+  const rawUrls = (opts.routes && opts.routes.length > 0) 
+    ? opts.routes 
+    : (rc?.ci?.collect?.url || []);
+
+  const urls: string[] = rawUrls.map(
     (u: string) =>
       u.includes("$BASE_URL")
         ? u.replaceAll("$BASE_URL", base)
@@ -98,6 +102,8 @@ export async function runLhci(opts: RunOptions) {
     path.join(opts.outDir, "lhci-summary.json"),
     JSON.stringify({ summaries }, null, 2),
   );
+
+  return urls;
 }
 
 export function makeManifest(params: {
