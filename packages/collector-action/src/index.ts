@@ -11,8 +11,8 @@ async function main() {
   const baseUrl = core
     .getInput("base-url", { required: true })
     .replace(/\/$/, "");
-  const routes = core
-    .getInput("routes", { required: true })
+  const routesInput = core.getInput("routes") || "";
+  const routes = routesInput
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
@@ -27,14 +27,14 @@ async function main() {
   const tmp = path.join(process.cwd(), ".wapmetrics/tmp");
   await fsp.mkdir(tmp, { recursive: true });
 
-  await runLhci({ baseUrl, routes, lhrcPath, outDir: tmp, budgets });
+  const usedRoutes = await runLhci({ baseUrl, routes, lhrcPath, outDir: tmp, budgets });
 
   const payload = context.payload as
     | { pull_request?: { number?: number } }
     | undefined;
   const prNumber = payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
   const manifest: Manifest = makeManifest({
-    routes,
+    routes: usedRoutes,
     budgets,
     owner: context.repo.owner,
     repo: context.repo.repo,

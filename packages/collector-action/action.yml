@@ -11,7 +11,7 @@ inputs:
     required: true
   routes:
     description: "Comma-separated routes e.g. /,/pricing"
-    required: true
+    required: false
   lhrc-path:
     description: "Path to .lighthouserc.json"
     required: false
