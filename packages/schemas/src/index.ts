@@ -106,4 +106,3 @@ export type IngestRequest = {
   pr?: number | string;
   sha: string;
 };
-

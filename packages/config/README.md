@@ -1,10 +1,12 @@
-# Norm — Web app Performance Monitoring
+# @wapmetrics/config
 
-## Configuration (`normrc.json`)
+Configuration schemas and utilities for WAPMetrics.
 
-Norm uses a `normrc.json` file to configure your Lighthouse runs.
+## Usage
 
-### Examples
+This package provides the schema and transformation logic for `normrc.json` configuration files.
+
+### Configuration Examples
 
 #### Minimal Configuration
 
@@ -18,6 +20,8 @@ Norm uses a `normrc.json` file to configure your Lighthouse runs.
 ```
 
 #### Full Configuration
+
+Includes device settings, global budgets, and route-specific budget overrides.
 
 ```json
 {

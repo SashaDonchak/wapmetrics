@@ -12,10 +12,10 @@ inputs:
   routes:
     description: "Comma-separated routes e.g. /,/pricing"
     required: false
-  lhrc-path:
-    description: "Path to .lighthouserc.json"
+  config:
+    description: "Path to normrc.json"
     required: false
-    default: ".lighthouserc.json"
+    default: "normrc.json"
   budgets:
     description: "JSON: {\"lcp\":2500,\"cls\":0.1,\"inp\":200}"
     required: false
@@ -34,5 +34,3 @@ inputs:
 outputs:
   artifact-path:
     description: "Path to produced tgz"
-
-

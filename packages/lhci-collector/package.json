@@ -5,6 +5,7 @@
   "main": "src/index.ts",
   "types": "src/index.ts",
   "dependencies": {
-    "@wapmetrics/schemas": "workspace:*"
+    "@wapmetrics/schemas": "workspace:*",
+    "@wapmetrics/config": "workspace:*"
   }
 }

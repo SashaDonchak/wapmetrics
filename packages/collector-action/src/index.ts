@@ -16,7 +16,10 @@ async function main() {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean);
-  const lhrcPath = core.getInput("lhrc-path") || ".lighthouserc.json";
+
+  // Changed input name from lhrc-path to config
+  const configPath = core.getInput("config") || "normrc.json";
+
   const budgets = core.getInput("budgets")
     ? JSON.parse(core.getInput("budgets"))
     : {};
@@ -27,15 +30,27 @@ async function main() {
   const tmp = path.join(process.cwd(), ".wapmetrics/tmp");
   await fsp.mkdir(tmp, { recursive: true });
 
-  const usedRoutes = await runLhci({ baseUrl, routes, lhrcPath, outDir: tmp, budgets });
+  const {
+    routes: usedRoutes,
+    preset: usedPreset,
+    budgets: usedBudgets,
+  } = await runLhci({
+    baseUrl,
+    routes,
+    configPath,
+    outDir: tmp,
+    budgets,
+  });
 
   const payload = context.payload as
     | { pull_request?: { number?: number } }
     | undefined;
-  const prNumber = payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
+  const prNumber =
+    payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
   const manifest: Manifest = makeManifest({
     routes: usedRoutes,
-    budgets,
+    budgets: usedBudgets || budgets,
+    preset: usedPreset,
     owner: context.repo.owner,
     repo: context.repo.repo,
     pr: prNumber,

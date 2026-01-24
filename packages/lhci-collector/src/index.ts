@@ -2,6 +2,7 @@ import type { SpawnOptions } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
+import { loadConfig, transformConfig } from "@wapmetrics/config";
 import type { LhciSummaryItem, Manifest } from "@wapmetrics/schemas";
 
 const sh = (cmd: string, args: string[], opts: SpawnOptions = {}) =>
@@ -13,78 +14,90 @@ const sh = (cmd: string, args: string[], opts: SpawnOptions = {}) =>
 export type RunOptions = {
   baseUrl: string; // e.g., http://127.0.0.1:3000
 
-  routes?: string[]; // fallback if rc has no urls
-  lhrcPath: string; // path to .lighthouserc.json
+  routes?: string[]; // override routes
+  configPath: string; // path to normrc.json (was lhrcPath)
   outDir: string; // where to write reports
-  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
+  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number }; // override global budgets
 };
 
-export async function runLhci(opts: RunOptions) {
+export async function runLhci(
+  opts: RunOptions,
+): Promise<{
+  routes: string[];
+  preset: string;
+  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
+}> {
   fs.mkdirSync(opts.outDir, { recursive: true });
 
-  const rcPath = path.resolve(process.cwd(), opts.lhrcPath);
-  const rc = JSON.parse(fs.readFileSync(rcPath, "utf8"));
+  // 1. Load and prepare NormRc
+  const norm = loadConfig(opts.configPath);
 
-  const base = opts.baseUrl.replace(/\/$/, "");
-  const rawUrls = (opts.routes && opts.routes.length > 0) 
-    ? opts.routes 
-    : (rc?.ci?.collect?.url || []);
+  // Overrides from options (CI inputs)
+  if (opts.baseUrl) {
+    norm.settings.baseUrl = opts.baseUrl;
+  }
 
-  const urls: string[] = rawUrls.map(
-    (u: string) =>
-      u.includes("$BASE_URL")
-        ? u.replaceAll("$BASE_URL", base)
-        : u.startsWith("http")
-          ? u
-          : `${base}${u.startsWith("/") ? "" : "/"}${u}`,
-  );
+  if (opts.routes && opts.routes.length > 0) {
+    norm.routes = opts.routes;
+  }
 
-  rc.ci = rc.ci || {};
-  rc.ci.collect = { ...(rc.ci.collect || {}), url: urls };
+  // If explicit budgets provided via opts, merge/override global budget
+  if (opts.budgets && Object.keys(opts.budgets).length > 0) {
+    norm.budgets = norm.budgets || {};
+    norm.budgets.global = norm.budgets.global || {};
+    // Map simplified opts.budgets to BudgetTimings
+    norm.budgets.global.timings = {
+      ...(norm.budgets.global.timings || {}),
+      "largest-contentful-paint": opts.budgets.lcp,
+      "cumulative-layout-shift": opts.budgets.cls,
+      "interaction-to-next-paint": opts.budgets.inp,
+      "total-blocking-time": opts.budgets.tbt,
+    };
+    // Clean up undefined
+    for (const key in norm.budgets.global.timings) {
+      if (
+        norm.budgets.global.timings[
+          key as keyof typeof norm.budgets.global.timings
+        ] === undefined
+      ) {
+        delete norm.budgets.global.timings[
+          key as keyof typeof norm.budgets.global.timings
+        ];
+      }
+    }
+  }
+
+  // 2. Transform to LHCI Config
+  const rc = transformConfig(norm);
+
+  // Set output directory for LHCI
   rc.ci.upload = {
     target: "filesystem",
     outputDir: path.join(opts.outDir, "lhci"),
   };
 
-  // Extract budgets from RC if not provided in opts
-  if (!opts.budgets || Object.keys(opts.budgets).length === 0) {
-    const rcBudgets = rc.ci?.assert?.budgets;
-    if (Array.isArray(rcBudgets)) {
-      // Try to find a global budget or the first one
-      const globalBudget =
-        rcBudgets.find((b: any) => b.path === "/" || b.path === "*") ||
-        rcBudgets[0];
-      if (globalBudget?.timings) {
-        opts.budgets = opts.budgets || {};
-        for (const t of globalBudget.timings) {
-          if (t.metric === "largest-contentful-paint") opts.budgets.lcp = t.budget;
-          if (t.metric === "cumulative-layout-shift") opts.budgets.cls = t.budget;
-          if (t.metric === "interaction-to-next-paint") opts.budgets.inp = t.budget;
-          if (t.metric === "total-blocking-time") opts.budgets.tbt = t.budget;
-        }
-      }
-    }
-  }
-
   const tmpRc = path.join(opts.outDir, "lighthouserc.generated.json");
   fs.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
 
-  // Run LHCI and fail on non-zero exit
+  // 3. Run LHCI
   const lhciExit = await sh(
     "npx",
     ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc],
     { cwd: process.cwd() },
   );
+
   if (lhciExit !== 0) {
     throw new Error(`LHCI failed with exit code ${lhciExit}`);
   }
 
   fs.unlinkSync(tmpRc);
 
-  // Build summary
+  // 4. Build summary
   const reports = path.join(opts.outDir, "lhci");
   const files = fs.existsSync(reports)
-    ? fs.readdirSync(reports).filter((f) => f.endsWith(".json") && f !== "manifest.json")
+    ? fs
+        .readdirSync(reports)
+        .filter((f) => f.endsWith(".json") && f !== "manifest.json")
     : [];
   const summaries: LhciSummaryItem[] = [];
   for (const f of files) {
@@ -103,7 +116,23 @@ export async function runLhci(opts: RunOptions) {
     JSON.stringify({ summaries }, null, 2),
   );
 
-  return urls;
+  // Return used config values for manifest
+  const usedRoutes = rc.ci.collect.url;
+  const usedPreset = rc.ci.collect.settings?.preset || "mobile";
+
+  // Re-extract simple budgets for manifest if possible, or just pass what we have
+  // The manifest expects a specific simple structure.
+  // We'll return the global budget values if they exist in the NormRc
+  const manifestBudgets = norm.budgets?.global?.timings
+    ? {
+        lcp: norm.budgets.global.timings["largest-contentful-paint"],
+        cls: norm.budgets.global.timings["cumulative-layout-shift"],
+        inp: norm.budgets.global.timings["interaction-to-next-paint"],
+        tbt: norm.budgets.global.timings["total-blocking-time"],
+      }
+    : undefined;
+
+  return { routes: usedRoutes, preset: usedPreset, budgets: manifestBudgets };
 }
 
 export function makeManifest(params: {
@@ -113,6 +142,7 @@ export function makeManifest(params: {
   repo?: string;
   pr?: number;
   sha?: string;
+  preset?: string;
 }): Manifest {
   return {
     version: 1,
@@ -123,7 +153,7 @@ export function makeManifest(params: {
     plugins: {
       lhci: {
         routes: params.routes,
-        env: { preset: "mobile" },
+        env: { preset: params.preset || "mobile" },
         budgets: params.budgets,
       },
     },
