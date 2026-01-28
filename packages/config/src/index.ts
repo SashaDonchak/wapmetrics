@@ -189,9 +189,12 @@ export function transformConfig(norm: NormRc): LighthouseRc {
         url: finalUrls,
         numberOfRuns: settings.numberOfRuns || 3,
       },
-      assert: {
-        budgets: lhciBudgets.length > 0 ? lhciBudgets : undefined,
-      },
+      // Only include assert when we have budgets - LHCI fails with "No assertions to use" otherwise
+      ...(lhciBudgets.length > 0 && {
+        assert: {
+          budgets: lhciBudgets,
+        },
+      }),
     },
   };
 
