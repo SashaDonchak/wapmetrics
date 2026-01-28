@@ -15,18 +15,18 @@ export async function uploadArtifact(opts: UploadOptions) {
   }
 
   const formData = new FormData();
-  
+
   // Read file into a Blob-like object for fetch
   // In Node 20, we can use fs.openAsBlob or just read buffer and create Blob
   // But standard fetch body takes Buffer too in some impls, or Blob.
   // Node 18+ fetch global support.
-  
+
   // Correct way for Node 18/20 built-in fetch with FormData:
   const fileBuffer = fs.readFileSync(bundlePath);
   const fileBlob = new Blob([fileBuffer]);
-  
+
   formData.append("bundle", fileBlob, "wapmetrics-run.tgz");
-  
+
   // Append metadata
   formData.append("owner", metadata.owner);
   formData.append("repo", metadata.repo);
@@ -46,9 +46,10 @@ export async function uploadArtifact(opts: UploadOptions) {
 
   if (!response.ok) {
     const text = await response.text();
-    throw new Error(`Upload failed: ${response.status} ${response.statusText}\n${text}`);
+    throw new Error(
+      `Upload failed: ${response.status} ${response.statusText}\n${text}`,
+    );
   }
 
   return await response.json();
 }
-

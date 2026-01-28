@@ -8,18 +8,7 @@ import { uploadArtifact } from "@wapmetrics/uploader";
 import * as tar from "tar";
 
 async function main() {
-  const baseUrl = core
-    .getInput("base-url", { required: true })
-    .replace(/\/$/, "");
-  const routesInput = core.getInput("routes") || "";
-  const routes = routesInput
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const lhrcPath = core.getInput("lhrc-path") || ".lighthouserc.json";
-  const budgets = core.getInput("budgets")
-    ? JSON.parse(core.getInput("budgets"))
-    : {};
+  const configPath = core.getInput("config", { required: true });
   const outTgz = core.getInput("out") || ".wapmetrics/wapmetrics-run.tgz";
   const token = core.getInput("token");
   const apiUrl = core.getInput("api-url");
@@ -27,15 +16,24 @@ async function main() {
   const tmp = path.join(process.cwd(), ".wapmetrics/tmp");
   await fsp.mkdir(tmp, { recursive: true });
 
-  const usedRoutes = await runLhci({ baseUrl, routes, lhrcPath, outDir: tmp, budgets });
+  const {
+    routes: usedRoutes,
+    preset: usedPreset,
+    budgets: usedBudgets,
+  } = await runLhci({
+    configPath,
+    outDir: tmp,
+  });
 
   const payload = context.payload as
     | { pull_request?: { number?: number } }
     | undefined;
-  const prNumber = payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
+  const prNumber =
+    payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
   const manifest: Manifest = makeManifest({
     routes: usedRoutes,
-    budgets,
+    budgets: usedBudgets,
+    preset: usedPreset,
     owner: context.repo.owner,
     repo: context.repo.repo,
     pr: prNumber,
