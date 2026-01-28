@@ -87,12 +87,10 @@ export interface LighthouseRc {
       [key: string]: unknown;
     };
     assert?: {
-      budgets?: Array<{
-        path: string;
-        timings?: Array<{ metric: string; budget: number }>;
-        resourceSizes?: Array<{ resourceType: string; budget: number }>;
-        resourceCounts?: Array<{ resourceType: string; budget: number }>;
-      }>;
+      assertions?: Record<
+        string,
+        ["error" | "warn" | "off", { maxNumericValue: number }]
+      >;
       // Allow arbitrary LHCI assert options
       [key: string]: unknown;
     };
@@ -144,43 +142,26 @@ export function transformConfig(norm: NormRc): LighthouseRc {
     }
   }
 
-  // 2. Transform Budgets
-  const lhciBudgets: NonNullable<
-    NonNullable<LighthouseRc["ci"]["assert"]>["budgets"]
-  > = [];
+  // 2. Transform Budgets to LHCI Assertions format
+  // Note: LHCI "budgets" only supports resource sizes/counts, NOT timing metrics
+  // For timing metrics like LCP, CLS, etc., we must use "assertions" format
+  const lhciAssertions: Record<
+    string,
+    ["error" | "warn", { maxNumericValue: number }]
+  > = {};
 
-  if (budgets) {
-    // Helper to convert simple key-value timings to LHCI array format
-    const toLhciTimings = (t: BudgetTimings) => {
-      return Object.entries(t).map(([metric, budget]) => ({
-        metric,
-        budget: budget as number,
-      }));
-    };
-
-    // Global budget
-    if (budgets.global?.timings) {
-      lhciBudgets.push({
-        path: "*", // Applies to everything not more specifically matched
-        timings: toLhciTimings(budgets.global.timings),
-      });
-    }
-
-    // Route specific budgets
-    for (const { path: routePath, budgetKey } of routeSpecificBudgets) {
-      const budgetDef = budgets[budgetKey];
-      if (budgetDef?.timings) {
-        lhciBudgets.push({
-          path: routePath, // e.g. "/dashboard"
-          timings: toLhciTimings(budgetDef.timings),
-        });
-      } else {
-        console.warn(
-          `Warning: Route '${routePath}' references missing budget '${budgetKey}'`,
-        );
+  if (budgets?.global?.timings) {
+    for (const [metric, value] of Object.entries(budgets.global.timings)) {
+      if (value !== undefined) {
+        lhciAssertions[metric] = ["warn", { maxNumericValue: value }];
       }
     }
   }
+
+  // TODO: Route-specific budgets would need matchingUrlPattern in assertion config
+  // For now, we only support global budgets for simplicity
+
+  const hasAssertions = Object.keys(lhciAssertions).length > 0;
 
   // 3. Construct LHCI Config
   const rc: LighthouseRc = {
@@ -189,10 +170,10 @@ export function transformConfig(norm: NormRc): LighthouseRc {
         url: finalUrls,
         numberOfRuns: settings.numberOfRuns || 3,
       },
-      // Only include assert when we have budgets - LHCI fails with "No assertions to use" otherwise
-      ...(lhciBudgets.length > 0 && {
+      // Only include assert when we have assertions - LHCI fails with "No assertions to use" otherwise
+      ...(hasAssertions && {
         assert: {
-          budgets: lhciBudgets,
+          assertions: lhciAssertions,
         },
       }),
     },

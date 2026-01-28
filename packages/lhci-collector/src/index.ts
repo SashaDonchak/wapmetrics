@@ -38,12 +38,13 @@ export async function runLhci(opts: RunOptions): Promise<{
   const tmpRc = path.join(opts.outDir, "lighthouserc.generated.json");
   fs.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
 
-  // 3. Run LHCI - skip assert phase if no budgets defined
-  const hasBudgets = rc.ci.assert?.budgets && rc.ci.assert.budgets.length > 0;
+  // 3. Run LHCI - skip assert phase if no assertions defined
+  const hasAssertions =
+    rc.ci.assert?.assertions && Object.keys(rc.ci.assert.assertions).length > 0;
   const lhciArgs = ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc];
 
-  // If no budgets, skip the assert step to avoid "No assertions to use" error
-  if (!hasBudgets) {
+  // If no assertions, skip the assert step to avoid "No assertions to use" error
+  if (!hasAssertions) {
     lhciArgs.push("--steps=collect,upload");
   }
 
