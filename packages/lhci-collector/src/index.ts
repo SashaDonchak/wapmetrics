@@ -16,9 +16,7 @@ export type RunOptions = {
   outDir: string; // where to write reports
 };
 
-export async function runLhci(
-  opts: RunOptions,
-): Promise<{
+export async function runLhci(opts: RunOptions): Promise<{
   routes: string[];
   preset: string;
   budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
@@ -57,8 +55,8 @@ export async function runLhci(
   const reports = path.join(opts.outDir, "lhci");
   const files = fs.existsSync(reports)
     ? fs
-      .readdirSync(reports)
-      .filter((f) => f.endsWith(".json") && f !== "manifest.json")
+        .readdirSync(reports)
+        .filter((f) => f.endsWith(".json") && f !== "manifest.json")
     : [];
   const summaries: LhciSummaryItem[] = [];
   for (const f of files) {
@@ -86,11 +84,11 @@ export async function runLhci(
   // We'll return the global budget values if they exist in the NormRc
   const manifestBudgets = norm.budgets?.global?.timings
     ? {
-      lcp: norm.budgets.global.timings["largest-contentful-paint"],
-      cls: norm.budgets.global.timings["cumulative-layout-shift"],
-      inp: norm.budgets.global.timings["interaction-to-next-paint"],
-      tbt: norm.budgets.global.timings["total-blocking-time"],
-    }
+        lcp: norm.budgets.global.timings["largest-contentful-paint"],
+        cls: norm.budgets.global.timings["cumulative-layout-shift"],
+        inp: norm.budgets.global.timings["interaction-to-next-paint"],
+        tbt: norm.budgets.global.timings["total-blocking-time"],
+      }
     : undefined;
 
   return { routes: usedRoutes, preset: usedPreset, budgets: manifestBudgets };

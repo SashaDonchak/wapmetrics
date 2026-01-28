@@ -1,8 +1,7 @@
 {
   "settings": {
     "baseUrl": "http://localhost:3000",
-    "numberOfRuns": 1,
-    "device": "mobile"
+    "numberOfRuns": 1
   },
   "routes": ["/"]
 }

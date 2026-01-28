@@ -38,8 +38,7 @@ jobs:
           {
             "settings": {
               "baseUrl": "http://127.0.0.1:3000",
-              "numberOfRuns": 2,
-              "device": "mobile"
+              "numberOfRuns": 2
             },
             "budgets": {
               "global": {

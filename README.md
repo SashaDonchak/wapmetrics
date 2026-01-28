@@ -23,7 +23,6 @@ Norm uses a `normrc.json` file to configure your Lighthouse runs.
 {
   "settings": {
     "baseUrl": "http://localhost:3000",
-    "device": "desktop",
     "numberOfRuns": 5
   },
   "budgets": {

@@ -3,11 +3,8 @@ import path from "node:path";
 
 // --- Schema Definitions ---
 
-export type DevicePreset = "mobile" | "desktop";
-
 export interface ProjectSettings {
   baseUrl: string;
-  device?: DevicePreset;
   numberOfRuns?: number;
 }
 
@@ -84,7 +81,7 @@ export interface LighthouseRc {
       url: string[];
       numberOfRuns?: number;
       settings?: {
-        preset?: DevicePreset;
+        preset?: "desktop" | "perf" | "experimental";
       };
       // Allow arbitrary LHCI collect options
       [key: string]: unknown;
@@ -191,9 +188,6 @@ export function transformConfig(norm: NormRc): LighthouseRc {
       collect: {
         url: finalUrls,
         numberOfRuns: settings.numberOfRuns || 3,
-        settings: {
-          preset: settings.device || "mobile",
-        },
       },
       assert: {
         budgets: lhciBudgets.length > 0 ? lhciBudgets : undefined,
