@@ -8,21 +8,7 @@ import { uploadArtifact } from "@wapmetrics/uploader";
 import * as tar from "tar";
 
 async function main() {
-  const baseUrl = core
-    .getInput("base-url", { required: true })
-    .replace(/\/$/, "");
-  const routesInput = core.getInput("routes") || "";
-  const routes = routesInput
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  // Changed input name from lhrc-path to config
-  const configPath = core.getInput("config") || "normrc.json";
-
-  const budgets = core.getInput("budgets")
-    ? JSON.parse(core.getInput("budgets"))
-    : {};
+  const configPath = core.getInput("config", { required: true });
   const outTgz = core.getInput("out") || ".wapmetrics/wapmetrics-run.tgz";
   const token = core.getInput("token");
   const apiUrl = core.getInput("api-url");
@@ -35,11 +21,8 @@ async function main() {
     preset: usedPreset,
     budgets: usedBudgets,
   } = await runLhci({
-    baseUrl,
-    routes,
     configPath,
     outDir: tmp,
-    budgets,
   });
 
   const payload = context.payload as
@@ -49,7 +32,7 @@ async function main() {
     payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
   const manifest: Manifest = makeManifest({
     routes: usedRoutes,
-    budgets: usedBudgets || budgets,
+    budgets: usedBudgets,
     preset: usedPreset,
     owner: context.repo.owner,
     repo: context.repo.repo,

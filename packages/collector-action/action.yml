@@ -6,20 +6,10 @@ branding:
 author: "you"
 runs: { using: "node20", main: "dist/index.js" }
 inputs:
-  base-url:
-    description: "Base URL to scan (http://127.0.0.1:3000\n or preview URL)"
-    required: true
-  routes:
-    description: "Comma-separated routes e.g. /,/pricing"
-    required: false
   config:
-    description: "Path to normrc.json"
-    required: false
+    description: "Path to normrc.json configuration file"
+    required: true
     default: "normrc.json"
-  budgets:
-    description: "JSON: {\"lcp\":2500,\"cls\":0.1,\"inp\":200}"
-    required: false
-    default: ""
   out:
     description: "Output tgz path"
     required: false

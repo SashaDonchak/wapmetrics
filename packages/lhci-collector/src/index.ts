@@ -12,12 +12,8 @@ const sh = (cmd: string, args: string[], opts: SpawnOptions = {}) =>
   });
 
 export type RunOptions = {
-  baseUrl: string; // e.g., http://127.0.0.1:3000
-
-  routes?: string[]; // override routes
-  configPath: string; // path to normrc.json (was lhrcPath)
+  configPath: string; // path to normrc.json
   outDir: string; // where to write reports
-  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number }; // override global budgets
 };
 
 export async function runLhci(
@@ -29,43 +25,8 @@ export async function runLhci(
 }> {
   fs.mkdirSync(opts.outDir, { recursive: true });
 
-  // 1. Load and prepare NormRc
+  // Load NormRc configuration
   const norm = loadConfig(opts.configPath);
-
-  // Overrides from options (CI inputs)
-  if (opts.baseUrl) {
-    norm.settings.baseUrl = opts.baseUrl;
-  }
-
-  if (opts.routes && opts.routes.length > 0) {
-    norm.routes = opts.routes;
-  }
-
-  // If explicit budgets provided via opts, merge/override global budget
-  if (opts.budgets && Object.keys(opts.budgets).length > 0) {
-    norm.budgets = norm.budgets || {};
-    norm.budgets.global = norm.budgets.global || {};
-    // Map simplified opts.budgets to BudgetTimings
-    norm.budgets.global.timings = {
-      ...(norm.budgets.global.timings || {}),
-      "largest-contentful-paint": opts.budgets.lcp,
-      "cumulative-layout-shift": opts.budgets.cls,
-      "interaction-to-next-paint": opts.budgets.inp,
-      "total-blocking-time": opts.budgets.tbt,
-    };
-    // Clean up undefined
-    for (const key in norm.budgets.global.timings) {
-      if (
-        norm.budgets.global.timings[
-          key as keyof typeof norm.budgets.global.timings
-        ] === undefined
-      ) {
-        delete norm.budgets.global.timings[
-          key as keyof typeof norm.budgets.global.timings
-        ];
-      }
-    }
-  }
 
   // 2. Transform to LHCI Config
   const rc = transformConfig(norm);
@@ -96,8 +57,8 @@ export async function runLhci(
   const reports = path.join(opts.outDir, "lhci");
   const files = fs.existsSync(reports)
     ? fs
-        .readdirSync(reports)
-        .filter((f) => f.endsWith(".json") && f !== "manifest.json")
+      .readdirSync(reports)
+      .filter((f) => f.endsWith(".json") && f !== "manifest.json")
     : [];
   const summaries: LhciSummaryItem[] = [];
   for (const f of files) {
@@ -125,11 +86,11 @@ export async function runLhci(
   // We'll return the global budget values if they exist in the NormRc
   const manifestBudgets = norm.budgets?.global?.timings
     ? {
-        lcp: norm.budgets.global.timings["largest-contentful-paint"],
-        cls: norm.budgets.global.timings["cumulative-layout-shift"],
-        inp: norm.budgets.global.timings["interaction-to-next-paint"],
-        tbt: norm.budgets.global.timings["total-blocking-time"],
-      }
+      lcp: norm.budgets.global.timings["largest-contentful-paint"],
+      cls: norm.budgets.global.timings["cumulative-layout-shift"],
+      inp: norm.budgets.global.timings["interaction-to-next-paint"],
+      tbt: norm.budgets.global.timings["total-blocking-time"],
+    }
     : undefined;
 
   return { routes: usedRoutes, preset: usedPreset, budgets: manifestBudgets };
