@@ -2,8 +2,13 @@ import type { SpawnOptions } from "node:child_process";
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
-import { loadConfig, transformConfig } from "@wapmetrics/config";
-import type { LhciSummaryItem, Manifest } from "@wapmetrics/schemas";
+import { loadConfig, type NormRc, transformConfig } from "@wapmetrics/config";
+import type {
+  BudgetConfig,
+  LhciSummaryItem,
+  Manifest,
+  RouteConfig,
+} from "@wapmetrics/schemas";
 
 const sh = (cmd: string, args: string[], opts: SpawnOptions = {}) =>
   new Promise<number>((resolve) => {
@@ -16,11 +21,11 @@ export type RunOptions = {
   outDir: string; // where to write reports
 };
 
-export async function runLhci(opts: RunOptions): Promise<{
-  routes: string[];
-  preset: string;
-  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
-}> {
+export type RunResult = {
+  config: NormRc;
+};
+
+export async function runLhci(opts: RunOptions): Promise<RunResult> {
   fs.mkdirSync(opts.outDir, { recursive: true });
 
   // Load NormRc configuration
@@ -80,45 +85,69 @@ export async function runLhci(opts: RunOptions): Promise<{
     JSON.stringify({ summaries }, null, 2),
   );
 
-  // Return used config values for manifest
-  const usedRoutes = rc.ci.collect.url;
-  const usedPreset = rc.ci.collect.settings?.preset || "mobile";
+  return { config: norm };
+}
 
-  // Re-extract simple budgets for manifest if possible, or just pass what we have
-  // The manifest expects a specific simple structure.
-  // We'll return the global budget values if they exist in the NormRc
-  const manifestBudgets = norm.budgets?.global?.timings
-    ? {
-        lcp: norm.budgets.global.timings["largest-contentful-paint"],
-        cls: norm.budgets.global.timings["cumulative-layout-shift"],
-        inp: norm.budgets.global.timings["interaction-to-next-paint"],
-        tbt: norm.budgets.global.timings["total-blocking-time"],
-      }
-    : undefined;
+/**
+ * Convert NormRc budgets to manifest budget format
+ */
+function transformBudgets(
+  normBudgets: NormRc["budgets"],
+): Record<string, BudgetConfig> | undefined {
+  if (!normBudgets) return undefined;
 
-  return { routes: usedRoutes, preset: usedPreset, budgets: manifestBudgets };
+  const result: Record<string, BudgetConfig> = {};
+
+  for (const [key, budget] of Object.entries(normBudgets)) {
+    if (!budget?.timings) continue;
+
+    result[key] = {
+      lcp: budget.timings["largest-contentful-paint"],
+      cls: budget.timings["cumulative-layout-shift"],
+      inp: budget.timings["interaction-to-next-paint"],
+      tbt: budget.timings["total-blocking-time"],
+    };
+  }
+
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+/**
+ * Convert NormRc routes to manifest route format
+ */
+function transformRoutes(normRoutes: NormRc["routes"]): RouteConfig[] {
+  return normRoutes.map((route) => {
+    if (typeof route === "string") {
+      return route;
+    }
+    return {
+      path: route.path,
+      budget: route.budget,
+    };
+  });
 }
 
 export function makeManifest(params: {
-  routes: string[];
-  budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
+  config: NormRc;
   owner?: string;
   repo?: string;
   pr?: number;
   sha?: string;
-  preset?: string;
 }): Manifest {
+  const { config, owner, repo, pr, sha } = params;
+
   return {
     version: 1,
-    owner: params.owner,
-    repo: params.repo,
-    pr: params.pr,
-    sha: params.sha,
+    owner,
+    repo,
+    pr,
+    sha,
     plugins: {
       lhci: {
-        routes: params.routes,
-        env: { preset: params.preset || "mobile" },
-        budgets: params.budgets,
+        baseUrl: config.settings.baseUrl,
+        numberOfRuns: config.settings.numberOfRuns,
+        routes: transformRoutes(config.routes),
+        budgets: transformBudgets(config.budgets),
       },
     },
     createdAt: new Date().toISOString(),

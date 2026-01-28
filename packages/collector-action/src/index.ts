@@ -16,11 +16,7 @@ async function main() {
   const tmp = path.join(process.cwd(), ".wapmetrics/tmp");
   await fsp.mkdir(tmp, { recursive: true });
 
-  const {
-    routes: usedRoutes,
-    preset: usedPreset,
-    budgets: usedBudgets,
-  } = await runLhci({
+  const { config } = await runLhci({
     configPath,
     outDir: tmp,
   });
@@ -31,9 +27,7 @@ async function main() {
   const prNumber =
     payload?.pull_request?.number ?? Number(process.env.PR_NUMBER || 0);
   const manifest: Manifest = makeManifest({
-    routes: usedRoutes,
-    budgets: usedBudgets,
-    preset: usedPreset,
+    config,
     owner: context.repo.owner,
     repo: context.repo.repo,
     pr: prNumber,

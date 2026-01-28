@@ -1,3 +1,12 @@
+export type RouteConfig = string | { path: string; budget?: string };
+
+export type BudgetConfig = {
+  lcp?: number;
+  cls?: number;
+  inp?: number;
+  tbt?: number;
+};
+
 export type Manifest = {
   version: 1;
   owner?: string;
@@ -6,9 +15,10 @@ export type Manifest = {
   sha?: string;
   plugins: {
     lhci?: {
-      routes: string[];
-      env?: { preset?: string; chromium?: string };
-      budgets?: { lcp?: number; cls?: number; inp?: number; tbt?: number };
+      baseUrl: string;
+      numberOfRuns?: number;
+      routes: RouteConfig[];
+      budgets?: Record<string, BudgetConfig>;
     };
   };
   createdAt: string;
@@ -47,25 +57,37 @@ export const ManifestSchema = {
         lhci: {
           type: "object",
           additionalProperties: false,
-          required: ["routes"],
+          required: ["baseUrl", "routes"],
           properties: {
-            routes: { type: "array", items: { type: "string" }, minItems: 1 },
-            env: {
-              type: "object",
-              additionalProperties: true,
-              properties: {
-                preset: { type: "string" },
-                chromium: { type: "string" },
+            baseUrl: { type: "string" },
+            numberOfRuns: { type: "number" },
+            routes: {
+              type: "array",
+              minItems: 1,
+              items: {
+                oneOf: [
+                  { type: "string" },
+                  {
+                    type: "object",
+                    required: ["path"],
+                    properties: {
+                      path: { type: "string" },
+                      budget: { type: "string" },
+                    },
+                  },
+                ],
               },
             },
             budgets: {
               type: "object",
-              additionalProperties: false,
-              properties: {
-                lcp: { type: "number" },
-                cls: { type: "number" },
-                inp: { type: "number" },
-                tbt: { type: "number" },
+              additionalProperties: {
+                type: "object",
+                properties: {
+                  lcp: { type: "number" },
+                  cls: { type: "number" },
+                  inp: { type: "number" },
+                  tbt: { type: "number" },
+                },
               },
             },
           },
