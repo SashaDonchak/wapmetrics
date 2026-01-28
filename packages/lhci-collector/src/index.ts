@@ -38,12 +38,16 @@ export async function runLhci(opts: RunOptions): Promise<{
   const tmpRc = path.join(opts.outDir, "lighthouserc.generated.json");
   fs.writeFileSync(tmpRc, JSON.stringify(rc, null, 2), "utf8");
 
-  // 3. Run LHCI
-  const lhciExit = await sh(
-    "npx",
-    ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc],
-    { cwd: process.cwd() },
-  );
+  // 3. Run LHCI - skip assert phase if no budgets defined
+  const hasBudgets = rc.ci.assert?.budgets && rc.ci.assert.budgets.length > 0;
+  const lhciArgs = ["-y", "@lhci/cli@0.15.x", "autorun", "--config", tmpRc];
+
+  // If no budgets, skip the assert step to avoid "No assertions to use" error
+  if (!hasBudgets) {
+    lhciArgs.push("--steps=collect,upload");
+  }
+
+  const lhciExit = await sh("npx", lhciArgs, { cwd: process.cwd() });
 
   if (lhciExit !== 0) {
     throw new Error(`LHCI failed with exit code ${lhciExit}`);
