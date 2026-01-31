@@ -68,8 +68,8 @@ export async function runLhci(opts: RunOptions): Promise<RunResult> {
   type LhciManifestEntry = {
     url: string;
     isRepresentativeRun: boolean;
-    htmlPath: string;
-    jsonPath: string;
+    htmlPath: string; // LHCI stores absolute paths
+    jsonPath: string; // LHCI stores absolute paths
   };
 
   const lhciManifest: LhciManifestEntry[] = fs.existsSync(lhciManifestPath)
@@ -82,8 +82,8 @@ export async function runLhci(opts: RunOptions): Promise<RunResult> {
   // Build summary from representative runs
   const summaries: LhciSummaryItem[] = [];
   for (const entry of representativeRuns) {
-    const reportPath = path.join(lhciDir, entry.jsonPath);
-    const rpt = JSON.parse(fs.readFileSync(reportPath, "utf8"));
+    // LHCI manifest stores absolute paths, use directly
+    const rpt = JSON.parse(fs.readFileSync(entry.jsonPath, "utf8"));
     const audits = rpt.audits || {};
 
     summaries.push({
@@ -92,7 +92,7 @@ export async function runLhci(opts: RunOptions): Promise<RunResult> {
       cls: audits["cumulative-layout-shift"]?.numericValue,
       inp: audits["interaction-to-next-paint"]?.numericValue,
       tbt: audits["total-blocking-time"]?.numericValue,
-      htmlReportPath: entry.htmlPath,
+      htmlReportPath: path.basename(entry.htmlPath), // Store just the filename
     });
   }
 
@@ -104,7 +104,7 @@ export async function runLhci(opts: RunOptions): Promise<RunResult> {
   // Clean up: remove non-representative files to keep tarball small
   const allFiles = fs.readdirSync(lhciDir);
   const representativeHtmlFiles = new Set(
-    representativeRuns.map((r) => r.htmlPath),
+    representativeRuns.map((r) => path.basename(r.htmlPath)),
   );
 
   for (const file of allFiles) {
