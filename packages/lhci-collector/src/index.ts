@@ -61,29 +61,60 @@ export async function runLhci(opts: RunOptions): Promise<RunResult> {
 
   fs.unlinkSync(tmpRc);
 
-  // 4. Build summary
-  const reports = path.join(opts.outDir, "lhci");
-  const files = fs.existsSync(reports)
-    ? fs
-        .readdirSync(reports)
-        .filter((f) => f.endsWith(".json") && f !== "manifest.json")
+  // 4. Build summary from representative runs only
+  const lhciDir = path.join(opts.outDir, "lhci");
+  const lhciManifestPath = path.join(lhciDir, "manifest.json");
+
+  type LhciManifestEntry = {
+    url: string;
+    isRepresentativeRun: boolean;
+    htmlPath: string;
+    jsonPath: string;
+  };
+
+  const lhciManifest: LhciManifestEntry[] = fs.existsSync(lhciManifestPath)
+    ? JSON.parse(fs.readFileSync(lhciManifestPath, "utf8"))
     : [];
+
+  // Filter for representative runs only
+  const representativeRuns = lhciManifest.filter((e) => e.isRepresentativeRun);
+
+  // Build summary from representative runs
   const summaries: LhciSummaryItem[] = [];
-  for (const f of files) {
-    const rpt = JSON.parse(fs.readFileSync(path.join(reports, f), "utf8"));
+  for (const entry of representativeRuns) {
+    const reportPath = path.join(lhciDir, entry.jsonPath);
+    const rpt = JSON.parse(fs.readFileSync(reportPath, "utf8"));
     const audits = rpt.audits || {};
+
     summaries.push({
       url: rpt.finalUrl,
       lcp: audits["largest-contentful-paint"]?.numericValue,
       cls: audits["cumulative-layout-shift"]?.numericValue,
       inp: audits["interaction-to-next-paint"]?.numericValue,
       tbt: audits["total-blocking-time"]?.numericValue,
+      htmlReportPath: entry.htmlPath,
     });
   }
+
   fs.writeFileSync(
     path.join(opts.outDir, "lhci-summary.json"),
     JSON.stringify({ summaries }, null, 2),
   );
+
+  // Clean up: remove non-representative files to keep tarball small
+  const allFiles = fs.readdirSync(lhciDir);
+  const representativeHtmlFiles = new Set(
+    representativeRuns.map((r) => r.htmlPath),
+  );
+
+  for (const file of allFiles) {
+    // Keep representative HTML files, delete everything else
+    if (file === "manifest.json") continue; // Keep LHCI manifest for reference
+    if (representativeHtmlFiles.has(file)) continue; // Keep representative HTML
+
+    // Delete JSON reports and non-representative HTML
+    fs.unlinkSync(path.join(lhciDir, file));
+  }
 
   return { config: norm };
 }

@@ -30,6 +30,7 @@ export type LhciSummaryItem = {
   cls?: number;
   inp?: number;
   tbt?: number;
+  htmlReportPath?: string;
 };
 
 export type BundleLayout = {
@@ -116,6 +117,7 @@ export const LhciSummarySchema = {
           cls: { type: "number" },
           inp: { type: "number" },
           tbt: { type: "number" },
+          htmlReportPath: { type: "string" },
         },
       },
     },
