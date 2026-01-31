@@ -1,0 +1,26 @@
+name: "WAPMetrics Collector (LHCI)"
+description: "Runs LHCI collector and packages artifacts into wapmetrics-run.tgz"
+branding:
+  color: "blue"
+  icon: "activity"
+author: "you"
+runs: { using: "node20", main: "dist/index.js" }
+inputs:
+  config:
+    description: "Path to normrc.json configuration file"
+    required: true
+    default: "normrc.json"
+  out:
+    description: "Output tgz path"
+    required: false
+    default: ".wapmetrics/wapmetrics-run.tgz"
+  token:
+    description: "WAPMetrics API Token (optional - enables upload)"
+    required: false
+  api-url:
+    description: "WAPMetrics API URL"
+    required: false
+    default: "https://api.wapmetrics.dev/v1/ingest"
+outputs:
+  artifact-path:
+    description: "Path to produced tgz"
